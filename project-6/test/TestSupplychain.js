@@ -158,7 +158,7 @@ contract('SupplyChain', function(accounts) {
         let balanceOfConsumerBeforeTransaction = await web3.eth.getBalance(consumerID);
         let balanceOfCafeBeforeTransaction = await web3.eth.getBalance(cafeID);
 
-        let result = await supplyChain.orderItem(upc, {from: consumerID, value: productPrice})
+        let result = await supplyChain.orderItem(upc, {from: consumerID, value: productPrice * 2}) // see if product price is returned
         assert.equal(result.logs[0].event, "Ordered")
 
         let balanceOfConsumerAfterTransaction = await web3.eth.getBalance(consumerID);

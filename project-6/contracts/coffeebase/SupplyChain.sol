@@ -5,13 +5,13 @@ import '../coffeeaccesscontrol/FarmerRole.sol';
 import '../coffeeaccesscontrol/RoasterRole.sol';
 import '../coffeeaccesscontrol/CafeRole.sol';
 import '../coffeeaccesscontrol/ConsumerRole.sol';
+import '../coffeecore/Ownable.sol';
 
 
-
-contract SupplyChain is FarmerRole, RoasterRole, CafeRole, ConsumerRole {
+contract SupplyChain is FarmerRole, RoasterRole, CafeRole, ConsumerRole, Ownable {
 
   // Define 'owner'
-  address owner;
+  // address owner;
 
   // Define a variable called 'upc' for Universal Product Code (UPC)
   uint  upc;
@@ -74,7 +74,7 @@ contract SupplyChain is FarmerRole, RoasterRole, CafeRole, ConsumerRole {
 
   // Define a modifer that checks to see if msg.sender == owner of the contract
   modifier onlyOwner() {
-    require(msg.sender == owner);
+    require(msg.sender == owner());
     _;
   }
 
@@ -150,15 +150,15 @@ contract SupplyChain is FarmerRole, RoasterRole, CafeRole, ConsumerRole {
   // and set 'sku' to 1
   // and set 'upc' to 1
   constructor() public payable {
-    owner = msg.sender;
+    // owner = msg.sender;
     sku = 1;
     upc = 1;
   }
 
   // Define a function 'kill' if required
   function kill() public {
-    if (msg.sender == owner) {
-      selfdestruct(owner);
+    if (msg.sender == owner()) {
+      selfdestruct(owner());
     }
   }
 
@@ -191,7 +191,7 @@ contract SupplyChain is FarmerRole, RoasterRole, CafeRole, ConsumerRole {
 
 
   // Define a function 'processtItem' that allows a farmer to mark an item 'Processed'
-  function processItem(uint _upc) public onlyFarmer farmed(_upc)
+  function processItem(uint _upc) public onlyFarmer farmed(_upc) verifyCaller(items[_upc].ownerID)
   // Call modifier to check if upc has passed previous supply chain stage
   
   // Call modifier to verify caller of this function
@@ -221,7 +221,7 @@ contract SupplyChain is FarmerRole, RoasterRole, CafeRole, ConsumerRole {
   }
 
   // Define a function 'sellItem' that allows a farmer to mark an item 'ForSale'
-  function roastItem(uint _upc) public onlyRoaster
+  function roastItem(uint _upc) public onlyRoaster verifyCaller(items[_upc].ownerID)
   // Call modifier to check if upc has passed previous supply chain stage
   
   // Call modifier to verify caller of this function
@@ -249,14 +249,16 @@ contract SupplyChain is FarmerRole, RoasterRole, CafeRole, ConsumerRole {
     emit PurchasedByCafe(_upc);
   }
 
-  function orderItem(uint _upc) public onlyConsumer payable paidEnough(items[_upc].productPrice){
+  function orderItem(uint _upc) public onlyConsumer payable paidEnough(items[_upc].productPrice) checkValue(_upc) {
     // Update the appropriate fields
-    items[_upc].itemState = State.Ordered;
-    items[_upc].consumerID = msg.sender;
-    items[_upc].ownerID = msg.sender;
-    items[_upc].cafeID.transfer(msg.value);
-    // Emit the appropriate event
-    emit Ordered(_upc);
+
+      items[_upc].itemState = State.Ordered;
+      items[_upc].consumerID = msg.sender;
+      items[_upc].ownerID = msg.sender;
+      items[_upc].cafeID.transfer(items[_upc].productPrice);
+      // Emit the appropriate event
+      emit Ordered(_upc);
+
   }
 
   function brewItem(uint _upc) public onlyCafe{
